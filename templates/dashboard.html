@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>超市运营数据分析看板 · 2016—2019</title>
+<style>
+  :root{
+    --bg:#eef1f5; --card:#fff; --ink:#16232e; --ink2:#5a6b7b; --ink3:#8a99a8;
+    --line:#dde4ea; --blue:#2b6cb0; --blue-l:#63b3ed; --navy:#1f3a5f;
+    --green:#2f855a; --red:#c53030; --amber:#b7791f; --purple:#6b46c1;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:"Microsoft YaHei","PingFang SC",-apple-system,"Segoe UI",sans-serif;
+       background:var(--bg);color:var(--ink);line-height:1.6;padding-bottom:40px;
+       -webkit-print-color-adjust:exact;print-color-adjust:exact;}
+
+  /* 顶栏 */
+  .topbar{background:linear-gradient(135deg,#1f3a5f,#2b6cb0);color:#fff;padding:22px 28px 18px;}
+  .topbar h1{font-size:21px;font-weight:600;letter-spacing:.5px;}
+  .topbar p{font-size:12.5px;opacity:.85;margin-top:5px;}
+  .filters{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
+  .frow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .frow .flabel{font-size:12px;opacity:.8;min-width:44px;}
+  .chip{font-size:12px;padding:3px 11px;border-radius:20px;border:1px solid rgba(255,255,255,.45);
+        background:rgba(255,255,255,.08);color:#fff;cursor:pointer;user-select:none;transition:.15s;}
+  .chip:hover{background:rgba(255,255,255,.2);}
+  .chip.on{background:#fff;color:#1f3a5f;font-weight:600;border-color:#fff;}
+  .reset{font-size:12px;padding:3px 12px;border-radius:20px;border:1px dashed rgba(255,255,255,.6);
+         background:transparent;color:#fff;cursor:pointer;margin-left:auto;}
+  .reset:hover{background:rgba(255,255,255,.15);}
+
+  .wrap{max-width:1400px;margin:0 auto;padding:0 20px;}
+
+  /* KPI */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:18px;}
+  .kpi{background:var(--card);border-radius:10px;padding:13px 15px;border:1px solid var(--line);}
+  .kpi .k{font-size:11.5px;color:var(--ink2);}
+  .kpi .v{font-size:22px;font-weight:600;margin-top:3px;letter-spacing:-.3px;}
+  .kpi .s{font-size:11px;color:var(--ink3);margin-top:2px;}
+  .kpi.neg .v{color:var(--red);}
+
+  /* 结论卡 */
+  .concl{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-top:14px;}
+  .ccard{background:var(--card);border-radius:10px;border:1px solid var(--line);
+         border-left:4px solid var(--blue);padding:13px 16px;}
+  .ccard.r{border-left-color:var(--red);}
+  .ccard.g{border-left-color:var(--green);}
+  .ccard.a{border-left-color:var(--amber);}
+  .ccard h4{font-size:13.5px;font-weight:600;margin-bottom:5px;}
+  .ccard p{font-size:12.3px;color:var(--ink2);}
+  .ccard .act{margin-top:7px;font-size:12px;color:var(--navy);background:#eef4fa;
+              border-radius:6px;padding:6px 9px;}
+  .ccard .act b{color:var(--red);}
+
+  /* 图表区 */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(430px,1fr));gap:14px;margin-top:18px;}
+  .card{background:var(--card);border-radius:10px;border:1px solid var(--line);
+        padding:14px 16px 12px;display:flex;flex-direction:column;}
+  .chead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}
+  .chead h3{font-size:14px;font-weight:600;}
+  .tag{font-size:10.5px;color:#fff;background:var(--blue);border-radius:4px;padding:1px 7px;white-space:nowrap;}
+  .tag.m2{background:var(--red);} .tag.m3{background:var(--amber);}
+  .tag.m5{background:var(--purple);} .tag.m6{background:var(--green);}
+  .chart{width:100%;height:270px;}
+  .chart.tall{height:300px;}
+  .note{font-size:12px;color:var(--ink2);background:#f7f9fb;border-radius:6px;
+        padding:8px 10px;margin-top:8px;border-left:3px solid var(--line);}
+  .note b{color:var(--ink);}
+  .note .hi{color:var(--red);font-weight:600;}
+  .note .good{color:var(--green);font-weight:600;}
+
+  /* 表格 */
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px;}
+  th,td{padding:5px 8px;text-align:right;border-bottom:1px solid var(--line);}
+  th{color:var(--ink2);font-weight:500;font-size:11.5px;}
+  th:first-child,td:first-child{text-align:left;}
+  td.n{font-variant-numeric:tabular-nums;}
+
+  footer{max-width:1400px;margin:26px auto 0;padding:0 20px;font-size:11.5px;color:var(--ink3);}
+  footer b{color:var(--ink2);}
+  .footbox{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
+  .footbox p{margin-bottom:4px;}
+
+  @media print{
+    body{background:#fff;}
+    .chip,.reset{display:none;}
+    .card{break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>超市运营数据分析看板</h1>
+  <p>数据区间 2016-01 ~ 2019-12　|　9,959 条订单明细　·　2,770 个订单　·　790 位客户　·　6 大区 / 17 子类</p>
+  <div class="filters" id="filters"></div>
+</div>
+
+<div class="wrap">
+  <section class="kpis" id="kpis"></section>
+
+  <section class="concl">
+    <div class="ccard r">
+      <h4>结论一 · 折扣是唯一的利润黑洞</h4>
+      <p>折扣 ≥40% 的订单，只占 <b>18.96%</b> 的销售额，却制造了全网 <b>90.86%</b> 的亏损（−89.4 万元）。
+         七档折扣里只有 ≤10% 是健康盈利（利润率 24.6% / 22.9%），20% 档已开始亏损（−1.87%）。</p>
+      <div class="act">建议：把 <b>40% 设为折扣审批红线</b>，超线订单需区域经理审批；20%~40% 区间纳入月度监控。</div>
+    </div>
+    <div class="ccard a">
+      <h4>结论二 · 增收不增利的真因不是折扣，是「桌子」</h4>
+      <p>2019 年销售额同比 +28.7%，利润只 +9.5%，利润率从 14.66% 跌到 12.47%。
+         排除法显示折扣结构（加权平均折扣稳定在 8.5%~9.7%）与无折扣业务利润率（约 24%）都没有恶化。
+         真因是家具占比从 33.3% 升至 36.4%，且其子类「桌子」亏损从 1.9 万扩大到 <b>6.6 万</b>（3.5 倍）。</p>
+      <div class="act">建议：对「桌子」子类做专项 <b>SKU 盈利复盘</b>——重新定价、收缩折扣或直接砍掉长尾 SKU。</div>
+    </div>
+    <div class="ccard">
+      <h4>结论三 · 风险集中在两个地方：亏损客户 + 西南大区</h4>
+      <p><b>139 位客户</b>（占 17.59%）累计净亏 <b>26.9 万元</b>，其中下单越多亏越多；
+         西南大区利润率最低（<b>7.49%</b>）且退货率最高（<b>12.45%</b>），形成「低利 + 高退」双差组合。</p>
+      <div class="act">建议：对亏损客户关闭高折扣权限；西南大区做 <b>专项经营复盘</b>（先查折扣渗透与退货原因）。</div>
+    </div>
+  </section>
+
+  <main class="grid">
+
+    <div class="card">
+      <div class="chead"><h3>经营趋势：四年销售额与利润率</h3><span class="tag">M1</span></div>
+      <div class="chart" id="c1"></div>
+      <p class="note" id="n1"></p>
+    </div>
+
+    <div class="card">
+      <div class="chead"><h3>季节性：逐月销售额（四年合计）</h3><span class="tag">M1</span></div>
+      <div class="chart" id="c2"></div>
+      <p class="note" id="n2"></p>
+    </div>
+
+    <div class="card">
+      <div class="chead"><h3>折扣档位 × 利润（红=亏损）</h3><span class="tag m2">M2</span></div>
+      <div class="chart" id="c3"></div>
+      <p class="note" id="n3"></p>
+    </div>
+
+    <div class="card">
+      <div class="chead"><h3>类别 × 折扣档 利润率热力图</h3><span class="tag m2">M2</span></div>
+      <div class="chart" id="c4"></div>
+      <p class="note" id="n4"></p>
+    </div>
+
+    <div class="card">
+      <div class="chead"><h3>子类别四象限：销售额 vs 利润率</h3><span class="tag m3">M3</span></div>
+      <div class="chart tall" id="c5"></div>
+      <p class="note" id="n5"></p>
+    </div>
+
+    <div class="card">
+      <div class="chead"><h3>大区业绩：利润率与退货率</h3><span class="tag m5">M5</span></div>
+      <div class="chart" id="c6"></div>
+      <p class="note" id="n6"></p>
+    </div>
+
+    <div class="card">
+      <div class="chead"><h3>客户利润分布（红=净亏损客户）</h3><span class="tag m3">M4</span></div>
+      <div class="chart" id="c7"></div>
+      <p class="note" id="n7"></p>
+    </div>
+
+    <div class="card">
+      <div class="chead"><h3>邮寄方式：发货时效与利润率</h3><span class="tag m6">M6</span></div>
+      <div class="chart" id="c8"></div>
+      <p class="note" id="n8"></p>
+    </div>
+
+    <div class="card" style="grid-column:1/-1">
+      <div class="chead"><h3>风险清单：亏损客户 Top 15（按累计亏损排序）</h3><span class="tag m3">M4</span></div>
+      <table id="losstbl">
+        <thead><tr><th>客户编号</th><th>订单数</th><th>销售额（元）</th><th>利润（元）</th><th>利润率</th><th>平均折扣</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="note" id="n9"></p>
+    </div>
+
+  </main>
+</div>
+
+<footer>
+  <div class="footbox">
+    <p><b>数据来源：</b>《2016—2019 年某超市运营数据》三张表（订单 9,959 行 / 退货 1,163 行 / 销售人员 6 行）。</p>
+    <p><b>关键口径：</b>利润率 = 利润 ÷ 销售额；退货率 = 退货订单数 ÷ 唯一订单数（<b>退货表先行去重</b>，1,163 行 → 296 行，若不去重会把退货率误算成 41.99%）。</p>
+    <p><b>重要说明：</b>负利润（2,041 行）是业务真实值，<b>不是异常值，已全部保留</b>；若按统计规则当异常值剔除，将抹掉一个 98.4 万元的真实亏损问题。</p>
+    <p><b>隐私处理：</b>客户编号已匿名化为 C0001–C0790。</p>
+    <p><b>可复现：</b>本看板由 <code>etl.py → analysis.py → build_dashboard.py</code> 从原始 .xls 一键生成，所有数字与脚本输出逐项一致。</p>
+  </div>
+</footer>
+
+<script>__ECHARTS__</script>
+<script>
+const DATA = __DATA__;
+const C = {}; DATA.columns.forEach((n,i)=>C[n]=i);
+const DIMS = DATA.dims;
+const COL = {blue:'#2b6cb0', blueL:'#63b3ed', navy:'#1f3a5f', green:'#2f855a',
+             red:'#c53030', amber:'#b7791f', purple:'#6b46c1', gray:'#8a99a8'};
+const DISC_LABELS = ['0%','10%','20%','25%','40%','60%','80%'];
+const DISC_VALUES = [0,0.1,0.2,0.25,0.4,0.6,0.8];
+
+const state = {年:new Set(DIMS.年), 地区:new Set(DIMS.地区), 类别:new Set(DIMS.类别)};
+
+function filtered(){
+  return DATA.rows.filter(r=> state.年.has(r[C.年]) && state.地区.has(r[C.地区]) && state.类别.has(r[C.类别]));
+}
+
+function agg(rows){
+  let sales=0, profit=0, discW=0, qty=0;
+  const orders=new Set(), custs=new Set(), retMap=new Map();
+  for(const r of rows){
+    sales += r[C.销售额]; profit += r[C.利润]; qty += r[C.数量];
+    discW += r[C.折扣] * r[C.销售额];
+    orders.add(r[C.订单序号]); custs.add(r[C.客户编号]);
+    retMap.set(r[C.订单序号], r[C.是否退货]);
+  }
+  let ret=0; retMap.forEach(v=>{ if(v) ret++; });
+  return {sales, profit, qty, orders:orders.size, custs:custs.size, retOrders:ret,
+          margin: sales? profit/sales*100 : 0,
+          disc: sales? discW/sales*100 : 0,
+          retRate: retMap.size? ret/retMap.size*100 : 0,
+          rows: rows.length};
+}
+
+const fmtW = v => (v/10000).toFixed(1);
+const fmtN = v => v.toLocaleString('zh-CN', {maximumFractionDigits:0});
+const fmtP = v => v.toFixed(2) + '%';
+
+/* ---------- 筛选器 ---------- */
+function buildFilters(){
+  const box = document.getElementById('filters');
+  const groups = [
+    {key:'年', label:'年份', fmt:x=>x+'年'},
+    {key:'地区', label:'大区', fmt:x=>x},
+    {key:'类别', label:'类别', fmt:x=>x}
+  ];
+  box.innerHTML = '';
+  groups.forEach(g=>{
+    const row = document.createElement('div'); row.className='frow';
+    const lab = document.createElement('span'); lab.className='flabel'; lab.textContent=g.label;
+    row.appendChild(lab);
+    const all = document.createElement('span');
+    all.className = 'chip' + (state[g.key].size===DIMS[g.key].length ? ' on':'');
+    all.textContent = '全部';
+    all.onclick = ()=>{ state[g.key] = new Set(DIMS[g.key]); render(); };
+    row.appendChild(all);
+    DIMS[g.key].forEach(v=>{
+      const c = document.createElement('span');
+      c.className = 'chip' + (state[g.key].has(v) ? ' on':'');
+      c.textContent = g.fmt(v);
+      c.onclick = ()=>{
+        if(state[g.key].has(v)){ if(state[g.key].size>1) state[g.key].delete(v); }
+        else state[g.key].add(v);
+        render();
+      };
+      row.appendChild(c);
+    });
+    box.appendChild(row);
+  });
+  const r = document.createElement('button');
+  r.className='reset'; r.textContent='重置筛选';
+  r.onclick = ()=>{ Object.keys(state).forEach(k=> state[k]=new Set(DIMS[k])); render(); };
+  box.appendChild(r);
+}
+
+/* ---------- KPI ---------- */
+function renderKPI(a){
+  const items = [
+    {k:'销售额', v: fmtW(a.sales)+' 万', s:'筛选内合计'},
+    {k:'利润', v: fmtW(a.profit)+' 万', s:'筛选内合计', neg: a.profit<0},
+    {k:'利润率', v: fmtP(a.margin), s:'利润 ÷ 销售额', neg: a.margin<0},
+    {k:'平均折扣', v: fmtP(a.disc), s:'按销售额加权'},
+    {k:'退货率', v: fmtP(a.retRate), s:'按唯一订单去重'},
+    {k:'订单数', v: fmtN(a.orders), s:'唯一订单'},
+    {k:'客户数', v: fmtN(a.custs), s:'去重客户'},
+    {k:'明细行', v: fmtN(a.rows), s:'订单明细行'}
+  ];
+  document.getElementById('kpis').innerHTML = items.map(x=>
+    `<div class="kpi${x.neg?' neg':''}"><div class="k">${x.k}</div><div class="v">${x.v}</div><div class="s">${x.s}</div></div>`
+  ).join('');
+}
+
+/* ---------- 通用图表基础 ---------- */
+const AXIS = {
+  axisLine:{lineStyle:{color:'#cbd5e0'}},
+  axisLabel:{color:'#5a6b7b', fontSize:11},
+  splitLine:{lineStyle:{color:'#edf1f5'}}
+};
+const TOOLTIP = {trigger:'axis', backgroundColor:'rgba(255,255,255,.97)', borderColor:'#dde4ea',
+                 borderWidth:1, textStyle:{color:'#16232e', fontSize:12}};
+
+/* ---------- M1 趋势 ---------- */
+function chartTrend(rows){
+  const years = DIMS.年.filter(y=> state.年.has(y));
+  const s = years.map(y=>{ const sub = rows.filter(r=> r[C.年]===y); return agg(sub); });
+  return {
+    tooltip: Object.assign({}, TOOLTIP, {formatter: p=>{
+      const i = p[0].dataIndex;
+      return `${years[i]} 年<br/>销售额：<b>${fmtW(s[i].sales)} 万</b><br/>利润：${fmtW(s[i].profit)} 万<br/>利润率：<b>${fmtP(s[i].margin)}</b>`;
+    }}),
+    legend:{data:['销售额','利润率'], right:0, top:0, textStyle:{fontSize:11, color:'#5a6b7b'}},
+    grid:{left:52, right:52, top:34, bottom:26},
+    xAxis: Object.assign({type:'category', data: years.map(y=>y+'年')}, AXIS),
+    yAxis: [
+      Object.assign({type:'value', name:'万元', nameTextStyle:{fontSize:11,color:'#8a99a8'}}, AXIS),
+      Object.assign({type:'value', name:'%', nameTextStyle:{fontSize:11,color:'#8a99a8'}, splitLine:{show:false}}, AXIS)
+    ],
+    series: [
+      {name:'销售额', type:'bar', barWidth:'46%', data: s.map(x=>+(x.sales/10000).toFixed(1)),
+       itemStyle:{color:'#63b3ed', borderRadius:[4,4,0,0]}},
+      {name:'利润率', type:'line', yAxisIndex:1, smooth:true, symbolSize:7,
+       data: s.map(x=>+x.margin.toFixed(2)),
+       lineStyle:{color:'#c53030', width:2.5}, itemStyle:{color:'#c53030'},
+       label:{show:true, fontSize:11, color:'#c53030', formatter:p=>p.value+'%'}}
+    ]
+  };
+}
+
+/* ---------- M1 月份 ---------- */
+function chartMonth(rows){
+  const mm = Array.from({length:12},(_,i)=>i+1);
+  const sales = mm.map(m=>{
+    const sub = rows.filter(r=> r[C.月]===m);
+    return +(sub.reduce((t,r)=>t+r[C.销售额],0)/10000).toFixed(1);
+  });
+  const max = Math.max.apply(null, sales);
+  return {
+    tooltip: Object.assign({}, TOOLTIP, {formatter: p=> `${p[0].name}<br/>销售额：<b>${p[0].value} 万</b>`}),
+    grid:{left:52, right:20, top:18, bottom:26},
+    xAxis: Object.assign({type:'category', data: mm.map(m=>m+'月')}, AXIS),
+    yAxis: Object.assign({type:'value', name:'万元', nameTextStyle:{fontSize:11,color:'#8a99a8'}}, AXIS),
+    series:[{type:'bar', data: sales.map(v=>({value:v, itemStyle:{color: v===max? '#2b6cb0':'#a9c9e8', borderRadius:[4,4,0,0]}})),
+             barWidth:'58%'}]
+  };
+}
+
+/* ---------- M2 折扣 ---------- */
+function chartDiscount(rows){
+  const profit=[], margin=[];
+  DISC_VALUES.forEach(dv=>{
+    const sub = rows.filter(r=> Math.abs(r[C.折扣]-dv)<1e-9);
+    const sales = sub.reduce((t,r)=>t+r[C.销售额],0);
+    const pf = sub.reduce((t,r)=>t+r[C.利润],0);
+    profit.push(+(pf/10000).toFixed(2));
+    margin.push(sales? +(pf/sales*100).toFixed(1) : null);
+  });
+  return {
+    tooltip: Object.assign({}, TOOLTIP, {formatter: p=>{
+      const i = p[0].dataIndex;
+      return `折扣 ${DISC_LABELS[i]}<br/>利润：<b>${profit[i]} 万</b><br/>利润率：${margin[i]===null?'—':margin[i]+'%'}`;
+    }}),
+    legend:{data:['利润','利润率'], right:0, top:0, textStyle:{fontSize:11, color:'#5a6b7b'}},
+    grid:{left:56, right:52, top:34, bottom:26},
+    xAxis: Object.assign({type:'category', data: DISC_LABELS}, AXIS),
+    yAxis: [
+      Object.assign({type:'value', name:'万元', nameTextStyle:{fontSize:11,color:'#8a99a8'}}, AXIS),
+      Object.assign({type:'value', name:'%', nameTextStyle:{fontSize:11,color:'#8a99a8'}, splitLine:{show:false}}, AXIS)
+    ],
+    series:[
+      {name:'利润', type:'bar', barWidth:'52%',
+       data: profit.map(v=>({value:v, itemStyle:{color: v>=0? '#2f855a':'#c53030', borderRadius: v>=0?[4,4,0,0]:[0,0,4,4]}}))},
+      {name:'利润率', type:'line', yAxisIndex:1, smooth:true, symbolSize:6, connectNulls:true,
+       data: margin, lineStyle:{color:'#b7791f', width:2}, itemStyle:{color:'#b7791f'}}
+    ]
+  };
+}
+
+/* ---------- M2 热力图 ---------- */
+function chartHeat(rows){
+  const cats = DIMS.类别.filter(c=> state.类别.has(c));
+  const data=[]; let mn=0, mx=0;
+  cats.forEach((cat, yi)=>{
+    DISC_VALUES.forEach((dv, xi)=>{
+      const sub = rows.filter(r=> r[C.类别]===cat && Math.abs(r[C.折扣]-dv)<1e-9);
+      if(!sub.length) return;
+      const sales = sub.reduce((t,r)=>t+r[C.销售额],0);
+      const pf = sub.reduce((t,r)=>t+r[C.利润],0);
+      const m = sales? +(pf/sales*100).toFixed(1) : 0;
+      mn = Math.min(mn, m); mx = Math.max(mx, m);
+      data.push([xi, yi, m]);
+    });
+  });
+  mn = Math.max(mn, -100);
+  return {
+    tooltip:{position:'top', formatter: p=> `${cats[p.value[1]]} · 折扣 ${DISC_LABELS[p.value[0]]}<br/>利润率：<b>${p.value[2]}%</b>`},
+    grid:{left:76, right:20, top:16, bottom:52},
+    xAxis: Object.assign({type:'category', data: DISC_LABELS, splitArea:{show:true}}, AXIS),
+    yAxis: Object.assign({type:'category', data: cats, splitArea:{show:true}}, AXIS),
+    visualMap:{min:mn, max:mx, calculable:true, orient:'horizontal', left:'center', bottom:6,
+               itemWidth:12, itemHeight:70, textStyle:{fontSize:10.5, color:'#5a6b7b'},
+               inRange:{color:['#c53030','#f6d5d5','#f7f9fb','#cfe3f4','#2b6cb0']}},
+    series:[{type:'heatmap', data: data, label:{show:true, fontSize:11, color:'#16232e', formatter:p=>p.value[2]+'%'},
+             itemStyle:{borderColor:'#fff', borderWidth:1.5}}]
+  };
+}
+
+/* ---------- M3 四象限 ---------- */
+function chartScatter(rows){
+  const pts = [];
+  const bySub = new Map();
+  for(const r of rows){
+    const k = r[C.子类别];
+    let o = bySub.get(k);
+    if(!o){ o = {sales:0, profit:0, cat:r[C.类别], n:0}; bySub.set(k,o); }
+    o.sales += r[C.销售额]; o.profit += r[C.利润]; o.n++;
+  }
+  bySub.forEach((o,k)=> pts.push({name:k, cat:o.cat,
+    sales:+(o.sales/10000).toFixed(1), margin:+(o.profit/o.sales*100).toFixed(1), n:o.n}));
+  const medSales = pts.map(p=>p.sales).sort((a,b)=>a-b)[Math.floor(pts.length/2)];
+  const catColor = {'家具':'#b7791f','技术':'#2b6cb0','办公用品':'#2f855a'};
+  return {
+    tooltip:{formatter: p=> `<b>${p.data.name}</b>（${p.data.cat}）<br/>销售额：${p.data.sales} 万<br/>利润率：<b>${p.data.margin}%</b><br/>明细行：${p.data.n}`},
+    legend:{data:Object.keys(catColor), right:0, top:0, textStyle:{fontSize:11, color:'#5a6b7b'}},
+    grid:{left:56, right:24, top:34, bottom:44},
+    xAxis: Object.assign({type:'value', name:'销售额（万元）', nameLocation:'middle', nameGap:26,
+                          nameTextStyle:{fontSize:11,color:'#8a99a8'}}, AXIS),
+    yAxis: Object.assign({type:'value', name:'利润率 %', nameTextStyle:{fontSize:11,color:'#8a99a8'}}, AXIS),
+    series: Object.keys(catColor).map(cat=>({
+      name:cat, type:'scatter', symbolSize: p=> 10 + Math.sqrt(p[2]||1),
+      data: pts.filter(p=>p.cat===cat).map(p=>[p.sales, p.margin, p.n, p.name]),
+      itemStyle:{color: catColor[cat], opacity:.85},
+      label:{show:true, fontSize:10.5, color:'#5a6b7b', formatter:p=>p.data[3], position:'top'},
+      markLine: cat==='家具' ? {
+        silent:true, symbol:'none', lineStyle:{color:'#c53030', type:'dashed', width:1.2},
+        label:{fontSize:10.5, color:'#c53030', formatter:'盈亏线'},
+        data:[{yAxis:0}, {xAxis:medSales}]
+      } : null
+    }))
+  };
+}
+
+/* ---------- M5 大区 ---------- */
+function chartRegion(rows){
+  const regs = DIMS.地区.filter(r=> state.地区.has(r));
+  const d = regs.map(rg=>{ const sub = rows.filter(r=> r[C.地区]===rg); return agg(sub); });
+  return {
+    tooltip: Object.assign({}, TOOLTIP, {formatter: p=>{
+      const i = p[0].dataIndex;
+      return `<b>${regs[i]}</b>（经理：${DIMS.地区经理[regs[i]]||'—'}）<br/>销售额：${fmtW(d[i].sales)} 万<br/>利润率：<b>${fmtP(d[i].margin)}</b><br/>退货率：${fmtP(d[i].retRate)}`;
+    }}),
+    legend:{data:['销售额','利润率','退货率'], right:0, top:0, textStyle:{fontSize:11, color:'#5a6b7b'}},
+    grid:{left:52, right:52, top:34, bottom:26},
+    xAxis: Object.assign({type:'category', data: regs}, AXIS),
+    yAxis:[
+      Object.assign({type:'value', name:'万元', nameTextStyle:{fontSize:11,color:'#8a99a8'}}, AXIS),
+      Object.assign({type:'value', name:'%', nameTextStyle:{fontSize:11,color:'#8a99a8'}, splitLine:{show:false}}, AXIS)
+    ],
+    series:[
+      {name:'销售额', type:'bar', barWidth:'44%', data: d.map(x=>+(x.sales/10000).toFixed(1)),
+       itemStyle:{color:'#a9c9e8', borderRadius:[4,4,0,0]}},
+      {name:'利润率', type:'line', yAxisIndex:1, smooth:true, symbolSize:7, data: d.map(x=>+x.margin.toFixed(2)),
+       lineStyle:{color:'#2f855a', width:2.5}, itemStyle:{color:'#2f855a'}},
+      {name:'退货率', type:'line', yAxisIndex:1, smooth:true, symbolSize:7, data: d.map(x=>+x.retRate.toFixed(2)),
+       lineStyle:{color:'#c53030', width:2, type:'dashed'}, itemStyle:{color:'#c53030'}}
+    ]
+  };
+}
+
+/* ---------- M4 客户分布 ---------- */
+function chartCustomer(rows){
+  const byCust = new Map();
+  for(const r of rows){
+    const k = r[C.客户编号];
+    let o = byCust.get(k); if(!o){ o={p:0}; byCust.set(k,o); }
+    o.p += r[C.利润];
+  }
+  const bins = [
+    {label:'< -5000', lo:-Infinity, hi:-5000},
+    {label:'-5000~-2000', lo:-5000, hi:-2000},
+    {label:'-2000~-500', lo:-2000, hi:-500},
+    {label:'-500~0', lo:-500, hi:0},
+    {label:'0~1000', lo:0, hi:1000},
+    {label:'1000~3000', lo:1000, hi:3000},
+    {label:'3000~8000', lo:3000, hi:8000},
+    {label:'> 8000', lo:8000, hi:Infinity}
+  ];
+  const counts = bins.map(()=>0);
+  byCust.forEach(o=>{
+    for(let i=0;i<bins.length;i++){
+      if(o.p > bins[i].lo && o.p <= bins[i].hi){ counts[i]++; break; }
+    }
+  });
+  return {
+    tooltip: Object.assign({}, TOOLTIP, {formatter: p=> `${p[0].name} 元<br/>客户数：<b>${p[0].value}</b> 人`}),
+    grid:{left:52, right:20, top:18, bottom:44},
+    xAxis: Object.assign({type:'category', data: bins.map(b=>b.label),
+                          axisLabel:{color:'#5a6b7b', fontSize:10.5, rotate:30}}, AXIS),
+    yAxis: Object.assign({type:'value', name:'客户数', nameTextStyle:{fontSize:11,color:'#8a99a8'}}, AXIS),
+    series:[{type:'bar', barWidth:'62%',
+      data: counts.map((v,i)=>({value:v, itemStyle:{color: bins[i].hi<=0? '#c53030':'#2f855a', borderRadius: bins[i].hi<=0?[0,0,4,4]:[4,4,0,0]}}))}]
+  };
+}
+
+/* ---------- M6 邮寄方式 ---------- */
+function chartShip(rows){
+  const ships = DIMS.邮寄方式;
+  const d = ships.map(s=>{
+    const sub = rows.filter(r=> r[C.邮寄方式]===s);
+    const a = agg(sub);
+    const days = sub.length? sub.reduce((t,r)=>t+r[C.发货天数],0)/sub.length : 0;
+    return {days:+days.toFixed(2), margin:a.margin};
+  });
+  return {
+    tooltip: Object.assign({}, TOOLTIP, {formatter: p=>{
+      const i = p[0].dataIndex;
+      return `<b>${ships[i]}</b><br/>平均发货：${d[i].days} 天<br/>利润率：<b>${fmtP(d[i].margin)}</b>`;
+    }}),
+    legend:{data:['平均发货天数','利润率'], right:0, top:0, textStyle:{fontSize:11, color:'#5a6b7b'}},
+    grid:{left:52, right:52, top:34, bottom:26},
+    xAxis: Object.assign({type:'category', data: ships}, AXIS),
+    yAxis:[
+      Object.assign({type:'value', name:'天', nameTextStyle:{fontSize:11,color:'#8a99a8'}}, AXIS),
+      Object.assign({type:'value', name:'%', nameTextStyle:{fontSize:11,color:'#8a99a8'}, splitLine:{show:false}}, AXIS)
+    ],
+    series:[
+      {name:'平均发货天数', type:'bar', barWidth:'44%', data: d.map(x=>x.days),
+       itemStyle:{color:'#b7791f', borderRadius:[4,4,0,0]}},
+      {name:'利润率', type:'line', yAxisIndex:1, smooth:true, symbolSize:7, data: d.map(x=>+x.margin.toFixed(2)),
+       lineStyle:{color:'#2b6cb0', width:2.5}, itemStyle:{color:'#2b6cb0'}}
+    ]
+  };
+}
+
+/* ---------- 解读文字 ---------- */
+function renderNotes(a, rows){
+  const n = (id, html)=> document.getElementById(id).innerHTML = html;
+  const yearly = DIMS.年.filter(y=> state.年.has(y)).map(y=>{
+    const sub = rows.filter(r=> r[C.年]===y);
+    const s = sub.reduce((t,r)=>t+r[C.销售额],0), p = sub.reduce((t,r)=>t+r[C.利润],0);
+    return {y, s, p, m: s? p/s*100:0};
+  });
+  if(yearly.length>=2){
+    const f = yearly[0], l = yearly[yearly.length-1];
+    const sg = f.s? (l.s-f.s)/f.s*100 : 0;
+    const pg = f.p? (l.p-f.p)/f.p*100 : 0;
+    n('n1', `销售额从 <b>${fmtW(f.s)} 万</b> 增至 <b>${fmtW(l.s)} 万</b>（+${sg.toFixed(1)}%），
+      但利润只增长 <b>${pg.toFixed(1)}%</b>，利润率由 ${fmtP(f.m)} 变为
+      <span class="hi">${fmtP(l.m)}</span>——<b>典型的增收不增利</b>。`);
+  } else {
+    n('n1', `当前筛选下仅 ${yearly.length} 个年度，趋势参考性有限。`);
+  }
+
+  const mSales = Array.from({length:12},(_,i)=>i+1).map(m=>
+    rows.filter(r=> r[C.月]===m).reduce((t,r)=>t+r[C.销售额],0));
+  const maxM = mSales.indexOf(Math.max.apply(null, mSales))+1;
+  const minM = mSales.indexOf(Math.min.apply(null, mSales))+1;
+  n('n2', `销售高峰在 <b>${maxM} 月</b>、低谷在 <b>${minM} 月</b>，
+     <b>Q4 明显强于 Q1</b>。建议把促销资源与库存准备前置到 ${Math.max(1,maxM-1)} 月前完成。`);
+
+  n('n3', `折扣 <b>≤10%</b> 时利润率健康（约 23%~25%）；折扣升到 <b>20% 已接近盈亏线</b>，
+     到 <b>40% 直接转为大幅亏损</b>。40% 及以上档位贡献了全网 <span class="hi">90.86% 的亏损</span>。`);
+
+  n('n4', `同一折扣档下不同类别的亏损程度差异明显，可用于判断「该先对哪个品类收紧折扣」。
+     红色越深 = 该品类在该折扣档亏得越狠。`);
+
+  n('n5', `横轴右侧 = 规模大，纵轴下方 = 不赚钱。<b>桌子</b>落在「高销 + 负利润」象限，
+     是唯一的大额失血子类；<b>收纳具、椅子、书架</b>位于右上「高销高利」象限，应重点保护。`);
+
+  n('n6', `利润率最高的是 <b>华北（17.61%）</b>，最低的是 <span class="hi">西南（7.49%）</span>；
+     而西南的退货率同时最高（<b>12.45%</b>）——低利与高退叠加，应优先复盘。`);
+
+  let loss=0, tot=0;
+  const bc = new Map();
+  for(const r of rows){ const k=r[C.客户编号]; let o=bc.get(k); if(!o){o={p:0};bc.set(k,o);} o.p+=r[C.利润]; }
+  bc.forEach(o=>{ tot++; if(o.p<0) loss++; });
+  n('n7', `筛选范围内共 <b>${tot}</b> 位客户，其中 <span class="hi">${loss} 位（${tot?(loss/tot*100).toFixed(1):0}%）</span>
+     累计净亏损。这些客户往往「下单越多亏越多」，属于要优先停止高折扣的名单。`);
+
+  const sd = DIMS.邮寄方式.map(s=>{
+    const sub = rows.filter(r=> r[C.邮寄方式]===s);
+    const a = agg(sub);
+    const days = sub.length? sub.reduce((t,r)=>t+r[C.发货天数],0)/sub.length:0;
+    return {s, days, m:a.margin};
+  }).sort((x,y)=> y.m - x.m);
+  n('n8', `「${sd[0].s}」利润率最高（${fmtP(sd[0].m)}），平均发货 ${sd[0].days} 天；
+     「${sd[sd.length-1].s}」利润率最低（${fmtP(sd[sd.length-1].m)}）。`);
+}
+
+/* ---------- 亏损客户表 ---------- */
+function renderLossTable(rows){
+  const byCust = new Map();
+  for(const r of rows){
+    const k = r[C.客户编号];
+    let o = byCust.get(k); if(!o){ o={p:0,s:0,d:0,n:0,ord:new Set()}; byCust.set(k,o); }
+    o.p += r[C.利润]; o.s += r[C.销售额]; o.d += r[C.折扣]; o.n++;
+    o.ord.add(r[C.订单序号]);
+  }
+  const list = [];
+  byCust.forEach((o,k)=>{ if(o.p<0) list.push({k, p:o.p, s:o.s, d:o.d/o.n, ord:o.ord.size}); });
+  list.sort((a,b)=> a.p - b.p);
+  const tb = document.querySelector('#losstbl tbody');
+  tb.innerHTML = list.slice(0,15).map(x=>
+    `<tr><td>${x.k}</td><td class="n">${x.ord}</td><td class="n">${fmtN(x.s)}</td>
+     <td class="n" style="color:#c53030;font-weight:600">${fmtN(x.p)}</td>
+     <td class="n">${(x.p/x.s*100).toFixed(1)}%</td><td class="n">${(x.d*100).toFixed(1)}%</td></tr>`
+  ).join('');
+  let lp=0, ln=0;
+  list.forEach(x=>{ lp+=x.p; ln++; });
+  document.getElementById('n9').innerHTML =
+    `筛选范围内净亏损客户共 <b>${ln}</b> 位，累计亏损 <span class="hi">${fmtN(lp)} 元</span>。
+     表中平均折扣普遍偏高——<b>高折扣是这些客户净亏的主要原因</b>。`;
+}
+
+/* ---------- 渲染 ---------- */
+const charts = {};
+function initChart(id){ if(!charts[id]) charts[id] = echarts.init(document.getElementById(id)); return charts[id]; }
+
+function render(){
+  buildFilters();
+  const rows = filtered();
+  const a = agg(rows);
+  renderKPI(a);
+  renderNotes(a, rows);
+
+  initChart('c1').setOption(chartTrend(rows), true);
+  initChart('c2').setOption(chartMonth(rows), true);
+  initChart('c3').setOption(chartDiscount(rows), true);
+  initChart('c4').setOption(chartHeat(rows), true);
+  initChart('c5').setOption(chartScatter(rows), true);
+  initChart('c6').setOption(chartRegion(rows), true);
+  initChart('c7').setOption(chartCustomer(rows), true);
+  initChart('c8').setOption(chartShip(rows), true);
+  renderLossTable(rows);
+}
+
+window.addEventListener('resize', ()=> Object.values(charts).forEach(c=> c.resize()));
+render();
+</script>
+</body>
+</html>

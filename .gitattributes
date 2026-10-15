@@ -1,0 +1,19 @@
+# 二进制文件：禁止换行符转换
+*.xls   binary
+*.xlsx  binary
+*.xlsm  binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.ico   binary
+
+# 文本文件：统一按 LF 存储
+*.py    text
+*.cjs   text
+*.js    text
+*.json  text
+*.md    text
+*.html  text
+*.css   text
+*.yml   text
+*.yaml  text

@@ -1,0 +1,27 @@
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# ---------- Node ----------
+node_modules/
+package-lock.json
+npm-debug.log*
+
+# ---------- 中间产物（可由 scripts/build_all.py 一键重生成）----------
+# 保留看板截图供 README 引用，其余中间产物不入库
+outputs/*
+!outputs/dashboard_preview.png
+
+# ---------- 编辑器 / 系统 ----------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+~$*
+*.tmp
+*.log
