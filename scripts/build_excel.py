@@ -4,7 +4,7 @@ W5-A · 生成 Excel 多 Sheet 汇总表
 输入：outputs/metrics.json + quality.json
 输出：超市运营分析_汇总表.xlsx
 """
-import sys, io, os, json
+import sys, io, os, json, datetime
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import openpyxl
@@ -35,6 +35,12 @@ FMT_INT = '#,##0'
 FMT_PCT = '0.00"%"'
 
 wb = openpyxl.Workbook()
+
+# 固定文档时间戳：让同一份数据每次生成的 .xlsx 字节一致，
+# 避免重新构建后 git 出现无意义的二进制 diff
+FIXED_TS = datetime.datetime(2016, 1, 1, 0, 0, 0)
+wb.properties.created = FIXED_TS
+wb.properties.modified = FIXED_TS
 
 
 def head(ws, row, cols, widths=None):
@@ -340,6 +346,34 @@ ws.cell(row=r, column=2).alignment = Alignment(wrap_text=True, vertical="top")
 ws.row_dimensions[r].height = 40
 
 wb.save(XLSX)
+
+
+def _normalize_zip(path):
+    """让 .xlsx 输出字节完全确定。
+
+    两处不确定来源：
+    1. openpyxl 写出的 .xlsx 是 zip，条目时间戳取自当前时间；
+    2. openpyxl 在 save 阶段会把 docProps/core.xml 里的 dcterms:modified
+       重写为当前时间（即使事先设置了 wb.properties.modified）。
+    不处理的话每次重跑都会产出内容相同、字节不同的文件，在 git 里表现为无意义的二进制 diff。
+    """
+    import zipfile, shutil, re
+    fixed = b"2016-01-01T00:00:00Z"
+    tmp = path + ".tmp"
+    with zipfile.ZipFile(path) as zin, zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as zout:
+        for item in zin.infolist():
+            data = zin.read(item.filename)
+            if item.filename == "docProps/core.xml":
+                data = re.sub(rb"(<dcterms:modified[^>]*>)[^<]*(</dcterms:modified>)",
+                              rb"\g<1>" + fixed + rb"\g<2>", data)
+            item.date_time = (1980, 1, 1, 0, 0, 0)
+            item.external_attr = 0o600 << 16
+            zout.writestr(item, data)
+    shutil.move(tmp, path)
+
+
+_normalize_zip(XLSX)
+
 print("=" * 72)
 print("W5-A · Excel 汇总表生成完成")
 print("=" * 72)
