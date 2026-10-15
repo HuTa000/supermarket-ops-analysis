@@ -1,4 +1,8 @@
-# 二进制文件：禁止换行符转换
+# 默认：按内容自动判定文本，且统一用 LF 存储与检出
+# （避免 Windows 检出为 CRLF 后与他人协作产生无谓 diff）
+* text=auto eol=lf
+
+# 二进制文件：禁止任何换行符转换
 *.xls   binary
 *.xlsx  binary
 *.xlsm  binary
@@ -6,14 +10,3 @@
 *.jpg   binary
 *.jpeg  binary
 *.ico   binary
-
-# 文本文件：统一按 LF 存储
-*.py    text
-*.cjs   text
-*.js    text
-*.json  text
-*.md    text
-*.html  text
-*.css   text
-*.yml   text
-*.yaml  text
