@@ -34,34 +34,37 @@ Python（pandas / numpy / openpyxl）· ECharts 5（单文件离线内联）· P
 
 ## 一、快速开始
 
-```bash
-git clone <本仓库地址> && cd <仓库目录>
+**前置条件**：本项目不附带原始数据（数据集含客户姓名，故不入库）。请把你的表格放进 `data/`，或运行时用 `--input` 指定。
 
-# 一键跑完全链路（预处理 → 分析 → 看板 → Excel → 交叉核对）
+```bash
+git clone https://github.com/HuTa000/supermarket-ops-analysis.git
+cd supermarket-ops-analysis
+
+# 1) 放入数据（三张表：订单 / 退货 / 销售人员）
+#    —— 表名或列名不同也没关系，改 config.json 的「表名」「字段映射」即可
+#       不确定怎么填就先跑：python scripts/convert_xls.py --input <你的文件>
+cp /path/to/你的数据.xlsx data/
+
+# 2) 一键跑完全链路（预处理 → 分析 → 看板 → Excel → 交叉核对）
 python scripts/build_all.py
 
-# 看板真实浏览器验证（需 Node + playwright）
+# 3) 看板真实浏览器验证（可选，需 Node + playwright）
 node scripts/verify_dashboard.cjs
 ```
 
-依赖：`pandas`、`numpy`、`xlrd`、`openpyxl`（读 `.xls` 需要 `xlrd`）。
+依赖：`pandas`、`numpy`、`xlrd`、`openpyxl`（读旧版 `.xls` 需要 `xlrd`）。
 
-本机可直接用隔离环境：
-
-```bash
-C:/Users/MR/.workbuddy/binaries/python/envs/default/Scripts/python.exe scripts/build_all.py
-```
+> **只想看结果**，不打算跑代码？直接打开 `超市运营分析_交互看板.html`（单文件、离线可开），
+> 或看 `超市运营分析报告.md` 与 `outputs/dashboard_preview.png`。
 
 ---
 
 ## 二、目录结构
 
 ```
-超市运营分析/
-├── config.json           ← 换数据只改这个文件
-├── data/                 原始数据放这里（.xls / .xlsx）
-│   ├── 原始数据.xls      原文件（Excel 2003 二进制）
-│   └── 原始数据.xlsx     转换副本
+supermarket-ops-analysis/
+├── config.json           ← 换数据只改这个文件（输入文件 / 表名 / 字段映射 / 输出前缀）
+├── data/                 ← 把你的原始数据放这里（.xlsx / .xlsm / .xls，不入库）
 ├── scripts/
 │   ├── _paths.py         路径与配置解析（项目可整体搬盘）
 │   ├── etl.py            W1 预处理：三表整合 / 退货去重 / 派生字段 / 质量台账 / 对账
@@ -74,7 +77,7 @@ C:/Users/MR/.workbuddy/binaries/python/envs/default/Scripts/python.exe scripts/b
 │   └── build_all.py      一键复现
 ├── templates/dashboard.html  看板模板（含 __ECHARTS__ / __DATA__ 占位符）
 ├── vendor/echarts.min.js     离线 ECharts
-├── outputs/              中间产物（干净宽表、指标 JSON、质量台账、截图）
+├── outputs/              中间产物（不入库，仅保留 dashboard_preview.png）
 ├── 超市运营分析_交互看板.html  ← 交付物 1（单文件，离线可开）
 ├── 超市运营分析_汇总表.xlsx    ← 交付物 2（9 个 Sheet）
 └── 超市运营分析报告.md         ← 交付物 3

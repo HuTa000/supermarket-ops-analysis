@@ -11,6 +11,10 @@ node_modules/
 package-lock.json
 npm-debug.log*
 
+# ---------- 原始数据（含客户真实姓名，不入库）----------
+data/*
+!data/README.md
+
 # ---------- 中间产物（可由 scripts/build_all.py 一键重生成）----------
 # 保留看板截图供 README 引用，其余中间产物不入库
 outputs/*
