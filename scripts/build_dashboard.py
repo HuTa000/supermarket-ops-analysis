@@ -21,7 +21,10 @@ data = open(DATA, encoding="utf-8").read()
 assert "__ECHARTS__" in tpl and "__DATA__" in tpl, "模板占位符缺失"
 
 html = tpl.replace("__ECHARTS__", echarts).replace("__DATA__", data)
-open(OUT, "w", encoding="utf-8").write(html)
+# newline="\n"：禁用平台换行符转换，Windows 上不再把 \n 写成 \r\n，
+# 保证输出与仓库中的 LF 版本字节一致（重跑不产生无意义 diff）
+with open(OUT, "w", encoding="utf-8", newline="\n") as f:
+    f.write(html)
 
 size = os.path.getsize(OUT)
 print("=" * 72)
